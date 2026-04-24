@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Barberías</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #f5f4ef;
+  --surface:      #ffffff;
+  --surface-alt:  #faf9f6;
+  --border:       #e2e0db;
+  --border-strong:#c8c6c0;
+  --text:         #1a1917;
+  --muted:        #6b6865;
+  --subtle:       #a8a6a1;
+  --accent:       #b45309;
+  --accent-light: #fef3c7;
+  --accent-hover: #92400e;
+  --star:         #f59e0b;
+  --star-empty:   #dddbd6;
+  --green:        #15803d;
+  --red:          #b91c1c;
+  --radius:       14px;
+  --radius-sm:    8px;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --trans:        0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── UPLOAD SCREEN ─────────────────────────────────────────── */
+#upload-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  padding: 48px 40px;
+}
+.upload-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 80px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  align-items: center;
+}
+.upload-left { display: flex; flex-direction: column; gap: 28px; }
+.brand-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-light);
+  border: 1px solid #fde68a; padding: 6px 14px; border-radius: 100px; width: fit-content;
+}
+.upload-title {
+  font-size: clamp(2.4rem, 5vw, 3.6rem); font-weight: 800;
+  letter-spacing: -0.04em; line-height: 1.08;
+}
+.upload-title em { font-style: normal; color: var(--accent); }
+.upload-sub { font-size: 1.05rem; color: var(--muted); line-height: 1.65; max-width: 44ch; }
+.feat-list { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+.feat-list li { display: flex; align-items: center; gap: 11px; font-size: 0.88rem; color: var(--muted); }
+.feat-dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.upload-right { display: flex; flex-direction: column; gap: 16px; }
+.drop-zone {
+  position: relative; border: 2px dashed var(--border-strong);
+  border-radius: 18px; padding: 52px 32px; text-align: center; cursor: pointer;
+  background: var(--surface);
+  transition: border-color var(--trans), background var(--trans), transform var(--trans);
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: var(--accent-light); transform: translateY(-2px); }
+.drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-icon { width: 44px; height: 44px; color: var(--subtle); margin: 0 auto 14px; transition: color var(--trans); }
+.drop-zone:hover .drop-icon, .drop-zone.drag-over .drop-icon { color: var(--accent); }
+.drop-cta { font-size: 0.95rem; font-weight: 700; margin-bottom: 5px; }
+.drop-hint { font-size: 0.82rem; color: var(--subtle); }
+.divider-or { display: flex; align-items: center; gap: 12px; font-size: 0.78rem; color: var(--subtle); }
+.divider-or::before, .divider-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.paste-area {
+  width: 100%; height: 96px; padding: 11px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 0.8rem; font-family: ui-monospace, monospace; resize: vertical;
+  background: var(--bg); color: var(--text); outline: none;
+  transition: border-color var(--trans), box-shadow var(--trans);
+}
+.paste-area::placeholder { color: var(--subtle); }
+.paste-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(180,83,9,0.1); background: var(--surface); }
+#upload-error {
+  display: none; font-size: 0.82rem; color: var(--red);
+  background: #fef2f2; border: 1px solid #fecaca; padding: 10px 14px; border-radius: var(--radius-sm);
+}
+
+/* ── BUTTONS ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.84rem; font-weight: 700; font-family: inherit;
+  padding: 8px 16px; border-radius: var(--radius-sm);
+  border: 1px solid transparent; cursor: pointer;
+  transition: all var(--trans); white-space: nowrap; background: none; line-height: 1;
+}
+.btn:active { transform: scale(0.98) translateY(1px); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-ghost { color: var(--muted); border-color: var(--border); background: var(--surface); }
+.btn-ghost:hover { color: var(--text); border-color: var(--border-strong); }
+
+/* ── APP SCREEN ───────────────────────────────────────────── */
+#app-screen { display: none; flex-direction: column; min-height: 100dvh; }
+
+.app-header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 28px; height: 56px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 50;
+}
+.header-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em;
+}
+.brand-icon {
+  width: 28px; height: 28px; background: var(--accent); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.header-actions { display: flex; align-items: center; gap: 8px; }
+
+/* ── TAB BAR ──────────────────────────────────────────────── */
+.tab-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 28px; display: flex; align-items: center; gap: 0;
+  position: sticky; top: 56px; z-index: 40;
+}
+.tab-btn {
+  padding: 0 20px; height: 44px; font-size: 0.86rem; font-weight: 700;
+  color: var(--muted); border: none; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all var(--trans); display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; font-family: inherit;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-count {
+  font-size: 0.72rem; padding: 2px 7px; border-radius: 100px;
+  background: var(--bg); color: var(--muted); font-weight: 800;
+  transition: all var(--trans);
+}
+.tab-btn.active .tab-count { background: var(--accent-light); color: var(--accent); }
+
+/* ── FILTER BAR ───────────────────────────────────────────── */
+.filter-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 28px;
+}
+.filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 220px; max-width: 340px; }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--subtle); pointer-events: none; }
+.search-inp {
+  width: 100%; padding: 8px 12px 8px 36px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 0.865rem; font-family: inherit; background: var(--bg); color: var(--text);
+  outline: none; transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
+}
+.search-inp::placeholder { color: var(--subtle); }
+.search-inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(180,83,9,0.1); background: var(--surface); }
+
+.chip-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.76rem; font-weight: 700; color: var(--muted);
+  padding: 5px 11px; border: 1px solid var(--border);
+  border-radius: 100px; cursor: pointer; user-select: none;
+  background: var(--bg); transition: all var(--trans);
+}
+.chip:hover { border-color: var(--border-strong); color: var(--text); }
+.chip.active { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+
+/* pago filter specific */
+.pago-chip.al_dia.active { color: var(--green); border-color: #86efac; background: #f0fdf4; }
+.pago-chip.con_deuda.active { color: var(--red); border-color: #fca5a5; background: #fef2f2; }
+
+/* ── TABLE SECTION ────────────────────────────────────────── */
+.table-section { flex: 1; padding: 20px 28px 40px; }
+.table-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.count-label { font-size: 0.84rem; color: var(--muted); }
+.count-label strong { color: var(--text); font-weight: 700; }
+
+.table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 0.87rem; min-width: 700px; }
+thead tr { background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+th {
+  padding: 10px 14px; text-align: left; font-size: 0.71rem; font-weight: 800;
+  color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase;
+  white-space: nowrap; user-select: none;
+}
+th.sortable { cursor: pointer; transition: color var(--trans); }
+th.sortable:hover { color: var(--text); }
+th.sorted { color: var(--accent); }
+td { padding: 11px 14px; vertical-align: middle; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tbody tr.data-row { cursor: pointer; transition: background var(--trans); }
+tbody tr.data-row:hover { background: var(--surface-alt); }
+tbody tr.data-row.is-expanded { background: #fefefe; }
+
+/* Expanded row */
+.detail-row { background: var(--surface-alt); }
+.detail-row > td { padding: 0; border-bottom: 1px solid var(--border); cursor: default; }
+.detail-content {
+  padding: 20px 20px 24px 56px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px 32px;
+  animation: rowIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes rowIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.det-section { display: flex; flex-direction: column; gap: 10px; }
+.det-title {
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--subtle);
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.hours-grid { display: flex; flex-direction: column; gap: 5px; }
+.hours-row { display: flex; align-items: baseline; gap: 10px; font-size: 0.83rem; }
+.hours-day { font-weight: 600; color: var(--muted); min-width: 80px; }
+.hours-time { color: var(--text); }
+.hours-closed { color: var(--subtle); font-style: italic; }
+.dist-grid { display: flex; flex-direction: column; gap: 5px; }
+.dist-row { display: flex; align-items: center; gap: 8px; font-size: 0.79rem; }
+.dist-num { color: var(--muted); font-weight: 600; width: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+.dist-bar-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.dist-bar-fill { height: 100%; background: var(--star); border-radius: 3px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); }
+.dist-count { color: var(--subtle); width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+.img-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.img-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); transition: transform var(--trans); cursor: pointer; }
+.img-thumb:hover { transform: scale(1.06); }
+.reviews-list { display: flex; flex-direction: column; gap: 11px; }
+.review-card { padding: 11px 13px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.review-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+.review-name { font-size: 0.82rem; font-weight: 700; }
+.review-text { font-size: 0.81rem; color: var(--muted); line-height: 1.55; }
+.map-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.81rem; font-weight: 700; color: var(--accent);
+  text-decoration: none; padding: 6px 12px;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  transition: all var(--trans); width: fit-content; margin-top: 4px;
+}
+.map-btn:hover { background: var(--accent); color: #fff; }
+.extras-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 16px; }
+.extra-item { font-size: 0.79rem; }
+.extra-key { font-weight: 700; color: var(--muted); text-transform: capitalize; }
+
+/* ── STARS ────────────────────────────────────────────────── */
+.stars { display: inline-flex; align-items: center; gap: 2px; }
+.star { width: 13px; height: 13px; }
+.star-f { color: var(--star); }
+.star-e { color: var(--star-empty); }
+.star-h { position: relative; display: inline-flex; width: 13px; height: 13px; }
+.star-h .back, .star-h .front { position: absolute; inset: 0; width: 13px; height: 13px; }
+.star-h .front { clip-path: inset(0 50% 0 0); }
+.rating-cell { display: flex; align-items: center; gap: 7px; }
+.rating-num { font-size: 0.83rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ── CELL TYPES ───────────────────────────────────────────── */
+a.cell-link {
+  color: var(--accent); text-decoration: none; font-size: 0.84rem;
+  transition: color var(--trans); display: inline-flex; align-items: center; gap: 4px;
+  max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+}
+a.cell-link:hover { color: var(--accent-hover); text-decoration: underline; }
+.cell-dash { color: var(--subtle); font-size: 0.84rem; }
+.cell-addr { font-size: 0.82rem; color: var(--muted); line-height: 1.45; max-width: 220px; }
+
+/* ── ACTION BUTTONS ───────────────────────────────────────── */
+.action-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer; background: none;
+  transition: all var(--trans); font-family: inherit; flex-shrink: 0;
+}
+.action-btn:active { transform: scale(0.92); }
+.btn-validate { color: var(--green); border-color: #bbf7d0; background: #f0fdf4; }
+.btn-validate:hover { background: #dcfce7; border-color: #86efac; }
+.btn-discard { color: var(--red); border-color: #fecaca; background: #fef2f2; }
+.btn-discard:hover { background: #fee2e2; border-color: #fca5a5; }
+.btn-move {
+  width: auto; padding: 0 10px; gap: 5px;
+  font-size: 0.75rem; font-weight: 700; height: 26px;
+  color: var(--green); border-color: #bbf7d0; background: #f0fdf4; border-radius: 6px;
+}
+.btn-move:hover { background: #dcfce7; border-color: #86efac; }
+.expand-cell { width: 40px; text-align: center; }
+.xbtn {
+  background: none; border: none; cursor: pointer; color: var(--subtle);
+  padding: 5px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+  transition: all var(--trans);
+}
+.xbtn:hover { background: var(--border); color: var(--text); }
+.xbtn svg { transition: transform var(--trans); }
+tr.is-expanded .xbtn svg { transform: rotate(180deg); }
+
+/* ── STATUS SELECT ────────────────────────────────────────── */
+.status-select {
+  appearance: none; -webkit-appearance: none; font-family: inherit;
+  font-size: 0.77rem; font-weight: 700; padding: 5px 22px 5px 10px;
+  border-radius: 100px; border: 1px solid; cursor: pointer; outline: none;
+  background-repeat: no-repeat; background-position: right 7px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='3'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  transition: all var(--trans); max-width: 180px;
+}
+.st-no_contactado  { background-color:#f8fafc; color:#64748b; border-color:#cbd5e1; }
+.st-contactado     { background-color:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.st-recontacto     { background-color:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+.st-ofrecer_demo   { background-color:#fffbeb; color:#b45309; border-color:#fde68a; }
+.st-demo_ofrecida  { background-color:#f0fdfa; color:#0f766e; border-color:#99f6e4; }
+.st-negociacion    { background-color:#fff1f2; color:#be123c; border-color:#fecdd3; }
+.st-no_interesa    { background-color:#f9fafb; color:#9ca3af; border-color:#e5e7eb; }
+.st-cliente_nuevo  { background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+
+.status-days { font-size: 0.71rem; color: var(--subtle); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.status-cell-wrap { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+
+/* Pipeline row state modifiers */
+tbody tr.row-no-interesa { opacity: 0.5; }
+tbody tr.row-no-interesa:hover { opacity: 0.75; }
+tbody tr.row-stale { background-color: #fffbeb !important; }
+tbody tr.row-stale:hover { background-color: #fef3c7 !important; }
+tbody tr.row-owed { background-color: #fef2f2 !important; }
+tbody tr.row-owed:hover { background-color: #fee2e2 !important; }
+
+/* ── PAYMENT GRID ─────────────────────────────────────────── */
+.pay-grid { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
+.pay-dot {
+  width: 20px; height: 20px; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 800; flex-shrink: 0;
+  transition: transform var(--trans), box-shadow var(--trans);
+  user-select: none;
+}
+.pay-dot.pay-ok   { background: #dcfce7; color: #15803d; }
+.pay-dot.pay-due  { background: #fee2e2; color: #b91c1c; cursor: pointer; }
+.pay-dot.pay-due:hover { transform: scale(1.2); box-shadow: 0 2px 6px rgba(185,28,28,0.2); }
+.pay-dot.pay-ok[style*="pointer"]:hover { transform: scale(1.2); }
+.pay-dot.pay-na   { background: var(--bg); color: var(--subtle); }
+
+.owed-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.77rem; font-weight: 800; padding: 3px 9px;
+  border-radius: 100px; font-variant-numeric: tabular-nums;
+}
+.owed-zero { background: #f0fdf4; color: var(--green); }
+.owed-some { background: #fef2f2; color: var(--red); }
+
+/* Fecha alta */
+.date-cell { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ── EMPTY STATE ──────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 60px 32px; color: var(--muted); }
+.empty-ico { width: 44px; height: 44px; color: var(--subtle); margin: 0 auto 14px; }
+.empty-state h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.empty-state p { font-size: 0.85rem; }
+
+/* ── MOBILE CARDS ─────────────────────────────────────────── */
+.cards-grid { display: none; flex-direction: column; gap: 12px; }
+.m-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.m-card-top { padding: 14px 16px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.m-title { font-size: 0.9rem; font-weight: 800; margin-bottom: 3px; }
+.m-addr { font-size: 0.79rem; color: var(--muted); line-height: 1.4; }
+.m-rating-wrap { flex-shrink: 0; text-align: right; }
+.m-rnum { font-size: 0.82rem; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.m-card-fields { padding: 10px 16px; display: flex; flex-direction: column; gap: 7px; }
+.m-field { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); }
+.m-field-icon { width: 13px; height: 13px; color: var(--subtle); flex-shrink: 0; }
+.m-card-actions { padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface-alt); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.m-expand-btn {
+  width: 100%; padding: 9px; background: var(--surface-alt); border: none;
+  border-top: 1px solid var(--border); cursor: pointer; font-size: 0.79rem;
+  font-weight: 700; color: var(--muted); display: flex; align-items: center;
+  justify-content: center; gap: 5px; transition: all var(--trans); font-family: inherit;
+}
+.m-expand-btn:hover { background: var(--border); color: var(--text); }
+.m-expand-btn svg { transition: transform var(--trans); }
+.m-detail { display: none; padding: 16px; border-top: 1px solid var(--border); background: var(--surface-alt); animation: rowIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.m-detail.open { display: block; }
+
+/* ── BACK BUTTON (hover-only, desktop) ──────────────────────── */
+.btn-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.74rem; font-weight: 700; height: 26px; padding: 0 10px;
+  color: var(--muted); border: 1px solid var(--border); background: var(--surface);
+  border-radius: 6px; cursor: pointer; white-space: nowrap; font-family: inherit;
+  opacity: 0; transition: opacity var(--trans), background var(--trans), color var(--trans), border-color var(--trans);
+  pointer-events: none;
+}
+tr.data-row:hover .btn-back { opacity: 1; pointer-events: auto; }
+.btn-back:hover { background: var(--bg); border-color: var(--border-strong); color: var(--text); }
+.btn-back:active { transform: scale(0.97); }
+
+/* Danger button */
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover { background: #991b1b; border-color: #991b1b; }
+.btn-danger:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+/* History badge — fue cliente activo */
+.hist-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.69rem; font-weight: 700;
+  color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4;
+  padding: 2px 7px; border-radius: 100px;
+  vertical-align: middle; margin-left: 6px; white-space: nowrap; cursor: help;
+}
+
+/* ── DUPLICATE BADGE ──────────────────────────────────────── */
+.dupe-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.69rem; font-weight: 700;
+  color: #92400e; background: #fef3c7; border: 1px solid #fde68a;
+  padding: 2px 7px; border-radius: 100px;
+  cursor: help; vertical-align: middle; margin-left: 7px; white-space: nowrap;
+  transition: background var(--trans);
+}
+.dupe-badge:hover { background: #fde68a; }
+
+/* ── MODAL ─────────────────────────────────────────────────── */
+#modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(20,18,14,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(3px);
+  animation: fadeBg 0.18s ease;
+}
+@keyframes fadeBg { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+  width: 100%; max-width: 560px; max-height: 82dvh;
+  display: flex; flex-direction: column;
+  animation: modalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+.modal-header {
+  padding: 20px 24px 14px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.modal-title { font-size: 1rem; font-weight: 800; line-height: 1.3; }
+.modal-subtitle { font-size: 0.82rem; color: var(--muted); margin-top: 3px; }
+.modal-close {
+  background: none; border: none; cursor: pointer; color: var(--subtle);
+  padding: 4px; border-radius: 6px; display: flex; align-items: center;
+  transition: all var(--trans); flex-shrink: 0;
+}
+.modal-close:hover { background: var(--border); color: var(--text); }
+
+.modal-body { padding: 18px 24px; overflow-y: auto; flex: 1; }
+
+.modal-summary {
+  background: var(--surface-alt); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px;
+  font-size: 0.87rem; line-height: 1.6;
+}
+.modal-summary strong { color: var(--text); }
+
+.modal-footer {
+  padding: 14px 24px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; flex-wrap: wrap;
+}
+
+/* Duplicate list items in modal */
+.dupe-list { display: flex; flex-direction: column; gap: 0; }
+.dupe-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.dupe-item:last-child { border-bottom: none; }
+.dupe-item-info { flex: 1; min-width: 0; }
+.dupe-item-title { font-size: 0.87rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dupe-item-sub { font-size: 0.79rem; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.dupe-item-sub .loc-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-weight: 700; padding: 1px 7px; border-radius: 100px; font-size: 0.72rem;
+}
+.loc-pipeline { background: #eff6ff; color: #1d4ed8; }
+.loc-clientes { background: #f0fdf4; color: #15803d; }
+.loc-scrapeados { background: #f5f5f4; color: #6b6865; }
+.dupe-item-acts { display: flex; gap: 5px; align-items: center; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #upload-screen { padding: 28px 20px; }
+  .upload-layout { grid-template-columns: 1fr; gap: 36px; }
+  .upload-left { order: 2; } .upload-right { order: 1; }
+  .upload-title { font-size: 2.2rem; }
+  .app-header { padding: 0 16px; }
+  .tab-bar { padding: 0 12px; overflow-x: auto; }
+  .filter-bar { padding: 10px 16px; }
+  .table-section { padding: 14px 16px 28px; }
+  .table-wrap { display: none; }
+  .cards-grid { display: flex; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     UPLOAD SCREEN
+═══════════════════════════════════════════════ -->
+<div id="upload-screen">
+  <div class="upload-layout">
+    <div class="upload-left">
+      <span class="brand-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+          <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
+          <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+        </svg>
+        CRM Barberías
+      </span>
+      <h1 class="upload-title">Pipeline de ventas<br>para <em>barberías</em></h1>
+      <p class="upload-sub">Importá el CSV del scraping y gestioná tus leads desde la validación hasta el cliente activo.</p>
+      <ul class="feat-list">
+        <li><span class="feat-dot"></span>Tabla 1 — Validación de leads scrapeados</li>
+        <li><span class="feat-dot"></span>Tabla 2 — Pipeline de contacto con estados</li>
+        <li><span class="feat-dot"></span>Tabla 3 — Clientes activos con pagos mensuales</li>
+        <li><span class="feat-dot"></span>Persistencia automática en el browser</li>
+      </ul>
+    </div>
+    <div class="upload-right">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".csv">
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+          </svg>
+        </div>
+        <p class="drop-cta">Arrastrá tu CSV o hacé clic</p>
+        <p class="drop-hint">Solo archivos .csv · Se guardan en tu browser</p>
+      </div>
+      <div class="divider-or">o pegá el contenido</div>
+      <textarea id="csv-paste" class="paste-area" placeholder="Pegá aquí el texto del CSV..."></textarea>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="loadFromPaste()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Cargar CSV pegado
+      </button>
+      <div id="upload-error"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     APP SCREEN
+═══════════════════════════════════════════════ -->
+<div id="app-screen">
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+          <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
+          <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+        </svg>
+      </div>
+      CRM Barberías
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="openDuplicatesModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          <path d="M11 8v6M8 11h6"/>
+        </svg>
+        Detectar duplicados
+      </button>
+      <button class="btn btn-ghost" onclick="exportCurrentTable()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar tabla
+      </button>
+      <button class="btn btn-ghost" onclick="confirmReset()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.52"/>
+        </svg>
+        Resetear
+      </button>
+    </div>
+  </header>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-scrapeados" onclick="setTab('scrapeados')">
+      Scrapeados <span class="tab-count" id="count-tab-scrapeados">0</span>
+    </button>
+    <button class="tab-btn" id="tab-pipeline" onclick="setTab('pipeline')">
+      Pipeline <span class="tab-count" id="count-tab-pipeline">0</span>
+    </button>
+    <button class="tab-btn" id="tab-clientes" onclick="setTab('clientes')">
+      Clientes Activos <span class="tab-count" id="count-tab-clientes">0</span>
+    </button>
+  </div>
+
+  <!-- Filter bar: Scrapeados -->
+  <div class="filter-bar" id="filter-scrapeados">
+    <div class="filter-row">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-inp" id="search-scrapeados" placeholder="Buscar por nombre, dirección, teléfono..." oninput="handleSearchScrapeados(this.value)">
+      </div>
+      <input type="file" id="import-more-input" accept=".csv" style="display:none" onchange="handleImportMore(this)">
+      <button class="btn btn-ghost" onclick="document.getElementById('import-more-input').click()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Importar más CSV
+      </button>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="handleSearchScrapeados(''); document.getElementById('search-scrapeados').value=''">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter bar: Pipeline -->
+  <div class="filter-bar" id="filter-pipeline" style="display:none">
+    <div class="filter-row">
+      <div class="chip-group" id="pipeline-status-chips"></div>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="clearPipelineFilter()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter bar: Clientes -->
+  <div class="filter-bar" id="filter-clientes" style="display:none">
+    <div class="filter-row">
+      <div class="chip-group">
+        <span class="chip pago-chip al_dia" id="chip-aldia" onclick="setPagoFilter('al_dia')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Pagos al día
+        </span>
+        <span class="chip pago-chip con_deuda" id="chip-deuda" onclick="setPagoFilter('con_deuda')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Con deuda
+        </span>
+      </div>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="setPagoFilter('all')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TABLE SECTION: Scrapeados ── -->
+  <div class="table-section" id="section-scrapeados">
+    <div class="table-meta">
+      <span class="count-label" id="meta-scrapeados">—</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Sitio web</th>
+            <th>Rating</th>
+            <th style="width:80px;text-align:center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-scrapeados"></tbody>
+      </table>
+    </div>
+    <div class="cards-grid" id="cards-scrapeados"></div>
+  </div>
+
+  <!-- ── TABLE SECTION: Pipeline ── -->
+  <div class="table-section" id="section-pipeline" style="display:none">
+    <div class="table-meta">
+      <span class="count-label" id="meta-pipeline">—</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Sitio web</th>
+            <th>Estado</th>
+            <th>Última actualización</th>
+            <th style="width:120px;text-align:center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-pipeline"></tbody>
+      </table>
+    </div>
+    <div class="cards-grid" id="cards-pipeline"></div>
+  </div>
+
+  <!-- ── TABLE SECTION: Clientes ── -->
+  <div class="table-section" id="section-clientes" style="display:none">
+    <div class="table-meta">
+      <span class="count-label" id="meta-clientes">—</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Fecha de alta</th>
+            <th>Pagos <span id="year-label"></span></th>
+            <th>Adeudado</th>
+            <th style="width:120px;text-align:center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-clientes"></tbody>
+      </table>
+    </div>
+    <div class="cards-grid" id="cards-clientes"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL OVERLAY
+═══════════════════════════════════════════════ -->
+<div id="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">—</div>
+        <div class="modal-subtitle" id="modal-subtitle"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONSTANTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const STATUS_LABELS = {
+  no_contactado: 'No contactado',
+  contactado:    'Contactado',
+  recontacto:    'Re-contacto',
+  ofrecer_demo:  'Ofrecer demo',
+  demo_ofrecida: 'Demo ofrecida',
+  negociacion:   'Negociación',
+  no_interesa:   'No interesa',
+  cliente_nuevo: 'Cliente nuevo',
+};
+
+const MONTHS_FULL   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MONTHS_SHORT  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MONTHS_LETTER = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+
+const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+const DAY_ES    = {
+  monday:'Lunes', tuesday:'Martes', wednesday:'Miércoles',
+  thursday:'Jueves', friday:'Viernes', saturday:'Sábado', sunday:'Domingo'
+};
+
+const SVG_CHEVRON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`;
+const SVG_CHECK   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+const SVG_X       = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+const SVG_ARROW   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+const STAR_PATH   = 'points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"';
+const SVG_DUPE    = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+const SVG_BACK    = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
+const SVG_HIST    = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+const STORAGE_KEY = 'crm_barberias_data';
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let state = { scrapeados: [], pipeline: [], clientes: [], ignoredDuplicates: [] };
+let activeTab           = 'scrapeados';
+let scrapeadosSearch    = '';
+let pipelineStatuses    = new Set();
+let clientesPagoFilter  = 'all';
+let expandedIds         = new Set();
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// UTILS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function daysSince(isoDate) {
+  if (!isoDate) return 0;
+  return Math.floor((Date.now() - new Date(isoDate)) / 86400000);
+}
+
+function relTime(isoDate) {
+  if (!isoDate) return '—';
+  const d = daysSince(isoDate);
+  if (d === 0) return 'Hoy';
+  if (d === 1) return 'Ayer';
+  if (d < 30)  return `Hace ${d} días`;
+  const dt = new Date(isoDate);
+  return `${dt.getDate()} ${MONTHS_SHORT[dt.getMonth()].toLowerCase()} ${dt.getFullYear()}`;
+}
+
+function fmtDate(isoDate) {
+  if (!isoDate) return '—';
+  const dt = new Date(isoDate);
+  return `${dt.getDate()} ${MONTHS_SHORT[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+function statusSelectClass(status) {
+  return 'status-select st-' + (status || 'no_contactado');
+}
+
+function trimUrl(url) {
+  return (url || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+}
+
+function fmtRating(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? '—' : n.toFixed(1);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DUPLICATE ENGINE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function normalizePhone(p) {
+  return (p || '').replace(/[\s\-\(\)\.\/]/g, '').toLowerCase().trim();
+}
+
+// Returns a canonical key for duplicate comparison, or null if no matchable field.
+function normalizeKey(record) {
+  const ph = normalizePhone(record.phone);
+  if (ph.length >= 6) return 'ph:' + ph;
+  const em = parseEmails(record.emails || '');
+  if (em.length) return 'em:' + em[0].toLowerCase();
+  return null;
+}
+
+// Returns { table: 'pipeline'|'clientes', item, key } or null.
+function findConflict(record) {
+  const key = normalizeKey(record);
+  if (!key) return null;
+  for (const lead of state.pipeline) {
+    if (normalizeKey(lead.record) === key) return { table: 'pipeline', item: lead, key };
+  }
+  for (const c of state.clientes) {
+    if (normalizeKey(c.record) === key) return { table: 'clientes', item: c, key };
+  }
+  return null;
+}
+
+// Returns conflict info for a scrapeado if it has an un-ignored duplicate.
+function getDuplicateInfo(record) {
+  if (state.ignoredDuplicates.includes(record._id)) return null;
+  return findConflict(record);
+}
+
+// Full scan: returns array of { scrapeado, conflict } for all non-ignored scrapeados with duplicates.
+function scanAllDuplicates() {
+  const results = [];
+  // Build fast lookup maps
+  const pipelineKeys  = new Map(state.pipeline.map(l  => [normalizeKey(l.record),  l]));
+  const clienteKeys   = new Map(state.clientes.map(c  => [normalizeKey(c.record),  c]));
+  const seenScrapeado = new Map(); // key → first scrapeado
+
+  for (const r of state.scrapeados) {
+    if (state.ignoredDuplicates.includes(r._id)) continue;
+    const key = normalizeKey(r);
+    if (!key) continue;
+
+    if (pipelineKeys.has(key))  results.push({ scrapeado: r, conflict: { table: 'pipeline',   item: pipelineKeys.get(key)  } });
+    else if (clienteKeys.has(key))  results.push({ scrapeado: r, conflict: { table: 'clientes',   item: clienteKeys.get(key)   } });
+    else if (seenScrapeado.has(key)) results.push({ scrapeado: r, conflict: { table: 'scrapeados', item: seenScrapeado.get(key) } });
+    else seenScrapeado.set(key, r);
+  }
+  return results;
+}
+
+function ignoreAndKeepBoth(scrapeadoId) {
+  if (!state.ignoredDuplicates.includes(scrapeadoId)) {
+    state.ignoredDuplicates.push(scrapeadoId);
+    saveState();
+  }
+}
+
+function tableLabel(table) {
+  return table === 'pipeline' ? 'Pipeline' : table === 'clientes' ? 'Clientes Activos' : 'Scrapeados';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STORAGE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return false;
+    state = JSON.parse(saved);
+    state.scrapeados         = state.scrapeados         || [];
+    state.pipeline           = state.pipeline           || [];
+    state.clientes           = state.clientes           || [];
+    state.ignoredDuplicates  = state.ignoredDuplicates  || [];
+    return true;
+  } catch(e) { return false; }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CSV PARSER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function parseCSV(text) {
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  if (!text) return [];
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i + 1];
+    if (inQ) {
+      if (c === '"' && n === '"') { field += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { field += c; }
+    } else {
+      if      (c === '"')  { inQ = true; }
+      else if (c === ',')  { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += c; }
+    }
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim());
+  const data = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.length === 1 && r[0].trim() === '') continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = r[idx] !== undefined ? r[idx].trim() : ''; });
+    data.push(obj);
+  }
+  return data;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FILE LOADING
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initFileHandlers() {
+  document.getElementById('file-input').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    readFile(f, text => loadData(text));
+  });
+
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (!f || !f.name.toLowerCase().endsWith('.csv')) { showUploadErr('Soltá un archivo .csv válido.'); return; }
+    readFile(f, text => loadData(text));
+  });
+}
+
+function readFile(file, cb) {
+  const reader = new FileReader();
+  reader.onload = ev => cb(ev.target.result);
+  reader.readAsText(file, 'UTF-8');
+}
+
+function loadFromPaste() {
+  const txt = document.getElementById('csv-paste').value;
+  if (!txt.trim()) { showUploadErr('Pegá contenido CSV primero.'); return; }
+  loadData(txt);
+}
+
+function loadData(csv) {
+  const data = parseCSV(csv);
+  if (!data || data.length === 0) { showUploadErr('No se pudieron leer datos del CSV. Revisá el formato.'); return; }
+  state.scrapeados = data.map(r => ({ ...r, _id: genId() }));
+  saveState();
+  showApp();
+}
+
+function handleImportMore(input) {
+  const f = input.files[0]; if (!f) return;
+  readFile(f, text => {
+    const raw = parseCSV(text);
+    if (!raw || !raw.length) { input.value = ''; return; }
+
+    // Pre-tag with temporary IDs for duplicate checking
+    const tagged = raw.map(r => ({ ...r, _id: genId() }));
+
+    // Split into new vs conflicting
+    const pipelineKeys = new Map(state.pipeline.map(l => [normalizeKey(l.record), l]));
+    const clienteKeys  = new Map(state.clientes.map(c => [normalizeKey(c.record), c]));
+
+    const newOnly      = [];
+    const conflicting  = [];
+
+    for (const r of tagged) {
+      const key = normalizeKey(r);
+      const inPipeline = key && pipelineKeys.has(key);
+      const inClientes = key && clienteKeys.has(key);
+      if (inPipeline || inClientes) {
+        conflicting.push({ record: r, where: inPipeline ? 'Pipeline' : 'Clientes Activos' });
+      } else {
+        newOnly.push(r);
+      }
+    }
+
+    if (!conflicting.length) {
+      // No duplicates, import directly
+      state.scrapeados.push(...newOnly);
+      saveState(); renderScrapeados(); updateTabCounts();
+      input.value = '';
+      return;
+    }
+
+    // Show summary modal
+    const dupeList = conflicting.slice(0, 8).map(({ record: r, where }) =>
+      `<div class="dupe-item" style="padding:8px 0">
+        <div class="dupe-item-info">
+          <div class="dupe-item-title">${esc(r.title || '—')}</div>
+          <div class="dupe-item-sub">Ya está en <span class="loc-tag loc-${where.toLowerCase().replace(' ','')}">${esc(where)}</span></div>
+        </div>
+      </div>`
+    ).join('');
+    const more = conflicting.length > 8 ? `<div style="font-size:.79rem;color:var(--subtle);padding-top:8px">+ ${conflicting.length - 8} más...</div>` : '';
+
+    showModal(
+      'Duplicados detectados al importar',
+      `${conflicting.length} registro${conflicting.length>1?'s':''} ya existen en el CRM`,
+      `<div class="modal-summary">
+        <strong>${newOnly.length}</strong> registros nuevos &nbsp;·&nbsp;
+        <strong>${conflicting.length}</strong> duplicado${conflicting.length>1?'s':''} con Pipeline o Clientes
+      </div>
+      <div class="dupe-list">${dupeList}${more}</div>`,
+      [
+        { label: `Importar solo ${newOnly.length} nuevos`, cls: 'btn-primary', action: () => {
+            state.scrapeados.push(...newOnly);
+            saveState(); renderScrapeados(); updateTabCounts();
+            closeModal(); input.value = '';
+          }
+        },
+        { label: 'Importar todos igualmente', cls: 'btn-ghost', action: () => {
+            state.scrapeados.push(...tagged);
+            saveState(); renderScrapeados(); updateTabCounts();
+            closeModal(); input.value = '';
+          }
+        },
+        { label: 'Cancelar', cls: 'btn-ghost', action: () => { closeModal(); input.value = ''; } },
+      ]
+    );
+  });
+}
+
+function showUploadErr(msg) {
+  const el = document.getElementById('upload-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SCREEN MANAGEMENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showApp() {
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display    = 'flex';
+  document.getElementById('year-label').textContent = new Date().getFullYear();
+  renderAll();
+}
+
+function confirmReset() {
+  if (!confirm('¿Resetear todos los datos del CRM?\nEsta acción borra scrapeados, pipeline y clientes. No se puede deshacer.')) return;
+  state = { scrapeados: [], pipeline: [], clientes: [] };
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('app-screen').style.display    = 'none';
+  document.getElementById('upload-screen').style.display = 'flex';
+  document.getElementById('file-input').value  = '';
+  document.getElementById('csv-paste').value   = '';
+  document.getElementById('upload-error').style.display = 'none';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TAB MANAGEMENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function setTab(tab) {
+  activeTab = tab;
+  expandedIds.clear();
+  ['scrapeados','pipeline','clientes'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`filter-${t}`).style.display  = t === tab ? 'block' : 'none';
+    document.getElementById(`section-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'scrapeados') renderScrapeados();
+  if (tab === 'pipeline')   { renderPipelineFilterChips(); renderPipeline(); }
+  if (tab === 'clientes')   renderClientes();
+}
+
+function updateTabCounts() {
+  document.getElementById('count-tab-scrapeados').textContent = state.scrapeados.length;
+  document.getElementById('count-tab-pipeline').textContent   = state.pipeline.length;
+  document.getElementById('count-tab-clientes').textContent   = state.clientes.length;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LEAD ACTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function validateLead(id) {
+  const record = state.scrapeados.find(r => r._id === id);
+  if (!record) return;
+
+  const conflict = findConflict(record);
+  if (conflict && !state.ignoredDuplicates.includes(id)) {
+    const where = tableLabel(conflict.table);
+    const existingTitle = esc(
+      conflict.table === 'pipeline'
+        ? (conflict.item.record.title || '—')
+        : (conflict.item.record.title || '—')
+    );
+    const statusInfo = conflict.table === 'pipeline'
+      ? `Estado: <strong>${STATUS_LABELS[conflict.item.status] || conflict.item.status}</strong>`
+      : `Alta: <strong>${fmtDate(conflict.item.addedAt)}</strong>`;
+    const existingId = conflict.item.id;
+    const tab = conflict.table;
+
+    showModal(
+      'Posible duplicado detectado',
+      `El teléfono o email de este registro ya existe en <strong>${where}</strong>.`,
+      `<div class="modal-summary">
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:4px">Registro existente</div>
+        <div style="font-weight:700;margin-bottom:3px">${existingTitle}</div>
+        <div style="font-size:.82rem;color:var(--muted)">${statusInfo}</div>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);line-height:1.6">¿Qué querés hacer?</p>`,
+      [
+        { label: 'Ver registro existente', cls: 'btn-ghost', action: () => { closeModal(); viewExistingRecord(tab, existingId); } },
+        { label: 'Mover de todos modos',   cls: 'btn-ghost', action: () => { ignoreAndKeepBoth(id); closeModal(); doValidateLead(id); } },
+        { label: 'Cancelar',               cls: 'btn-primary', action: closeModal },
+      ]
+    );
+    return;
+  }
+
+  doValidateLead(id);
+}
+
+function doValidateLead(id) {
+  const record = state.scrapeados.find(r => r._id === id);
+  if (!record) return;
+  state.scrapeados = state.scrapeados.filter(r => r._id !== id);
+  if (!record.historial_tablas) record.historial_tablas = [];
+  record.historial_tablas.push({ tabla: 'Pipeline', fecha: Date.now() });
+  state.pipeline.push({
+    id: genId(), record,
+    status: 'no_contactado',
+    statusDate: new Date().toISOString(),
+    addedAt: new Date().toISOString()
+  });
+  saveState();
+  renderScrapeados();
+  updateTabCounts();
+}
+
+function discardLead(id) {
+  if (!confirm('¿Eliminar este registro permanentemente? Esta acción no se puede deshacer.')) return;
+  state.scrapeados = state.scrapeados.filter(r => r._id !== id);
+  saveState();
+  renderScrapeados();
+  updateTabCounts();
+}
+
+function changeStatus(id, newStatus) {
+  const lead = state.pipeline.find(l => l.id === id);
+  if (!lead) return;
+  lead.status     = newStatus;
+  lead.statusDate = new Date().toISOString();
+  saveState();
+  renderPipeline();
+}
+
+function moveToClientes(id) {
+  const lead = state.pipeline.find(l => l.id === id);
+  if (!lead) return;
+  if (!lead.record.historial_tablas) lead.record.historial_tablas = [];
+  lead.record.historial_tablas.push({ tabla: 'Clientes', fecha: Date.now() });
+  state.clientes.push({
+    id: genId(), record: lead.record,
+    addedAt: new Date().toISOString(),
+    pagos: {}
+  });
+  state.pipeline = state.pipeline.filter(l => l.id !== id);
+  saveState();
+  renderPipeline();
+  updateTabCounts();
+}
+
+function returnToScrapeados(id) {
+  const lead = state.pipeline.find(l => l.id === id);
+  if (!lead) return;
+  showModal(
+    'Regresar a Scrapeados',
+    `<strong style="color:var(--muted)">${esc(lead.record.title || '—')}</strong>`,
+    `<div class="modal-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+      ¿Regresar este lead a Scrapeados? Se perderá el historial de estados y fechas de contacto.
+    </div>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:16px;cursor:pointer;font-size:.88rem;line-height:1.55;user-select:none">
+      <input type="checkbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:var(--accent)"
+        onchange="document.getElementById('btn-confirm-back').disabled=!this.checked">
+      <span>Entiendo que se perderán los datos de estados y fechas de contacto</span>
+    </label>`,
+    [
+      { label: 'Cancelar',  cls: 'btn-ghost',  action: closeModal },
+      { label: 'Confirmar', cls: 'btn-danger',  action: () => { closeModal(); doReturnToScrapeados(id); }, id: 'btn-confirm-back', disabled: true },
+    ]
+  );
+}
+
+function doReturnToScrapeados(id) {
+  const lead = state.pipeline.find(l => l.id === id);
+  if (!lead) return;
+  state.pipeline = state.pipeline.filter(l => l.id !== id);
+  state.scrapeados.push(lead.record);
+  saveState();
+  if (activeTab === 'pipeline') renderPipeline(); else renderScrapeados();
+  updateTabCounts();
+}
+
+function returnToPipeline(id) {
+  const cliente = state.clientes.find(c => c.id === id);
+  if (!cliente) return;
+  const { owed } = buildPaymentGrid(cliente);
+  const owedWarning = owed > 0
+    ? `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius-sm);margin-bottom:14px;font-size:.85rem;color:#92400e;font-weight:600">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Este cliente tiene ${owed} mes${owed > 1 ? 'es' : ''} sin pagar
+      </div>`
+    : '';
+  showModal(
+    'Regresar a Pipeline',
+    `<strong style="color:var(--muted)">${esc(cliente.record.title || '—')}</strong>`,
+    `${owedWarning}
+    <div class="modal-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+      ¿Regresar este cliente a Pipeline? Se perderá el historial de pagos mensuales.
+    </div>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:16px;cursor:pointer;font-size:.88rem;line-height:1.55;user-select:none">
+      <input type="checkbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:var(--accent)"
+        onchange="document.getElementById('btn-confirm-back').disabled=!this.checked">
+      <span>Entiendo que se perderán los datos de pagos</span>
+    </label>`,
+    [
+      { label: 'Cancelar',  cls: 'btn-ghost',  action: closeModal },
+      { label: 'Confirmar', cls: 'btn-danger',  action: () => { closeModal(); doReturnToPipeline(id); }, id: 'btn-confirm-back', disabled: true },
+    ]
+  );
+}
+
+function doReturnToPipeline(id) {
+  const cliente = state.clientes.find(c => c.id === id);
+  if (!cliente) return;
+  state.clientes = state.clientes.filter(c => c.id !== id);
+  state.pipeline.push({
+    id: genId(), record: cliente.record,
+    status: 'negociacion',
+    statusDate: new Date().toISOString(),
+    addedAt: new Date().toISOString()
+  });
+  saveState();
+  if (activeTab === 'clientes') renderClientes(); else renderPipeline();
+  updateTabCounts();
+}
+
+function togglePago(clienteId, key) {
+  const c = state.clientes.find(c => c.id === clienteId);
+  if (!c) return;
+  c.pagos[key] = !c.pagos[key];
+  saveState();
+  renderClientes();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FILTER HANDLERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function handleSearchScrapeados(v) {
+  scrapeadosSearch = v.toLowerCase();
+  renderScrapeados();
+}
+
+function togglePipelineStatus(key) {
+  pipelineStatuses.has(key) ? pipelineStatuses.delete(key) : pipelineStatuses.add(key);
+  renderPipelineFilterChips();
+  renderPipeline();
+}
+
+function clearPipelineFilter() {
+  pipelineStatuses.clear();
+  renderPipelineFilterChips();
+  renderPipeline();
+}
+
+function setPagoFilter(val) {
+  clientesPagoFilter = clientesPagoFilter === val ? 'all' : val;
+  document.getElementById('chip-aldia').classList.toggle('active', clientesPagoFilter === 'al_dia');
+  document.getElementById('chip-deuda').classList.toggle('active', clientesPagoFilter === 'con_deuda');
+  renderClientes();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FILTER LOGIC
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function getFilteredScrapeados() {
+  if (!scrapeadosSearch) return state.scrapeados;
+  const q = scrapeadosSearch;
+  return state.scrapeados.filter(r => {
+    const ca = parseCompleteAddress(r.complete_address);
+    const addr = ca ? [ca.borough, ca.state, ca.street, ca.city].filter(Boolean).join(' ').toLowerCase() : (r.address||'').toLowerCase();
+    return (r.title||'').toLowerCase().includes(q) ||
+           (r.phone||'').toLowerCase().includes(q) ||
+           addr.includes(q);
+  });
+}
+
+function getFilteredPipeline() {
+  if (pipelineStatuses.size === 0) return state.pipeline;
+  return state.pipeline.filter(l => pipelineStatuses.has(l.status));
+}
+
+function isCurrentMonthApplicable(cliente) {
+  const now = new Date();
+  const added = new Date(cliente.addedAt);
+  return added <= new Date(now.getFullYear(), now.getMonth() + 1, 0);
+}
+
+function isCurrentMonthUnpaid(cliente) {
+  if (!isCurrentMonthApplicable(cliente)) return false;
+  const now = new Date();
+  const key = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  return !cliente.pagos[key];
+}
+
+function getFilteredClientes() {
+  if (clientesPagoFilter === 'al_dia')   return state.clientes.filter(c => !isCurrentMonthUnpaid(c));
+  if (clientesPagoFilter === 'con_deuda') return state.clientes.filter(c => isCurrentMonthUnpaid(c));
+  return state.clientes;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ADDRESS HELPERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function parseCompleteAddress(raw) {
+  if (!raw || raw === 'nan' || raw === 'null') return null;
+  try { return JSON.parse(raw); } catch(e) { return null; }
+}
+
+function renderAddressCell(row) {
+  const ca = parseCompleteAddress(row.complete_address);
+  if (!ca) return `<span class="cell-addr">${esc(row.address || '—')}</span>`;
+  const street = [ca.street, ca.city, ca.postal_code].filter(Boolean).join(', ');
+  const lines  = [ca.borough, ca.state, street].filter(Boolean);
+  if (!lines.length) return `<span class="cell-addr">${esc(row.address || '—')}</span>`;
+  const [first, ...rest] = lines;
+  return `<span class="cell-addr"><span style="font-weight:600;color:var(--text)">${esc(first)}</span>${rest.map(l => `<br>${esc(l)}`).join('')}</span>`;
+}
+
+function renderAddressCardLine(row) {
+  const ca = parseCompleteAddress(row.complete_address);
+  if (!ca) return esc(row.address || '');
+  const street = [ca.street, ca.city, ca.postal_code].filter(Boolean).join(', ');
+  return [ca.borough, ca.state, street].filter(Boolean).join('<br>');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STARS & EMAIL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function stars(rating) {
+  const r = parseFloat(rating) || 0;
+  let h = '<span class="stars">';
+  for (let i = 1; i <= 5; i++) {
+    if (r >= i) {
+      h += `<svg class="star star-f" viewBox="0 0 24 24"><polygon ${STAR_PATH} fill="currentColor"/></svg>`;
+    } else if (r >= i - 0.5) {
+      h += `<span class="star-h"><svg class="back star-e" viewBox="0 0 24 24"><polygon ${STAR_PATH} fill="currentColor"/></svg><svg class="front star-f" viewBox="0 0 24 24"><polygon ${STAR_PATH} fill="currentColor"/></svg></span>`;
+    } else {
+      h += `<svg class="star star-e" viewBox="0 0 24 24"><polygon ${STAR_PATH} fill="currentColor"/></svg>`;
+    }
+  }
+  return h + '</span>';
+}
+
+function parseEmails(raw) {
+  if (!raw) return [];
+  return raw.split(/[;,\s]+/).map(e => e.trim()).filter(e => e.includes('@'));
+}
+
+function renderEmailCell(emails) {
+  if (!emails.length) return '<span class="cell-dash">—</span>';
+  let h = `<a href="mailto:${esc(emails[0])}" class="cell-link" onclick="event.stopPropagation()">${esc(emails[0])}</a>`;
+  if (emails.length > 1) h += ` <span style="font-size:.74rem;color:var(--subtle)">+${emails.length-1}</span>`;
+  return h;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HOURS / REVIEWS / IMAGES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderHours(raw) {
+  if (!raw || raw === 'nan' || raw === 'null') return '<span style="color:var(--subtle);font-size:.82rem">No disponible</span>';
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed !== 'object' || Array.isArray(parsed)) return '<span style="color:var(--subtle);font-size:.82rem">No disponible</span>';
+    const sorted = Object.keys(parsed).sort((a,b) => {
+      const ai = DAY_ORDER.indexOf(a.toLowerCase()), bi = DAY_ORDER.indexOf(b.toLowerCase());
+      return (ai<0?99:ai) - (bi<0?99:bi);
+    });
+    let h = '<div class="hours-grid">';
+    for (const k of sorted) {
+      const t = Array.isArray(parsed[k]) ? parsed[k].join(', ') : String(parsed[k]);
+      h += `<div class="hours-row"><span class="hours-day">${esc(DAY_ES[k.toLowerCase()]||k)}</span><span class="${/closed|cerrado/i.test(t)?'hours-closed':'hours-time'}">${esc(t)}</span></div>`;
+    }
+    return h + '</div>';
+  } catch(e) { return '<span style="color:var(--subtle);font-size:.82rem">No disponible</span>'; }
+}
+
+function renderDistBars(raw) {
+  if (!raw || raw === 'nan') return '';
+  try {
+    const parsed = JSON.parse(raw);
+    const keys = ['5','4','3','2','1'];
+    const total = keys.reduce((s,k) => s + (parseInt(parsed[k])||0), 0);
+    if (!total) return '';
+    let h = '<div class="dist-grid">';
+    for (const k of keys) {
+      const cnt = parseInt(parsed[k]) || 0;
+      h += `<div class="dist-row"><span class="dist-num">${k}</span><div class="dist-bar-track"><div class="dist-bar-fill" style="width:${Math.round(cnt/total*100)}%"></div></div><span class="dist-count">${cnt}</span></div>`;
+    }
+    return h + '</div>';
+  } catch(e) { return ''; }
+}
+
+function renderReviews(raw) {
+  if (!raw || raw === 'nan' || raw === 'null') return '';
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr) || !arr.length) return '';
+    let h = '<div class="reviews-list">';
+    for (const rev of arr.slice(0,3)) {
+      const name = esc(rev.Name || rev.author_name || 'Anónimo');
+      const text = (rev.Description || rev.text || '').slice(0, 280);
+      h += `<div class="review-card"><div class="review-head">${stars(rev.Rating||rev.rating||0)}<span class="review-name">${name}</span></div>${text?`<p class="review-text">${esc(text)}${(rev.Description||rev.text||'').length>280?'…':''}</p>`:''}</div>`;
+    }
+    return h + '</div>';
+  } catch(e) { return ''; }
+}
+
+function renderImages(raw) {
+  if (!raw || raw === 'nan' || raw === 'null') return '';
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr) || !arr.length) return '';
+    const srcs = arr.slice(0,5).map(i => typeof i === 'string' ? i : (i.image||i.url||'')).filter(Boolean);
+    if (!srcs.length) return '';
+    return '<div class="img-grid">' + srcs.map(s => `<img class="img-thumb" src="${esc(s)}" alt="Imagen" loading="lazy" onerror="this.style.display='none'">`).join('') + '</div>';
+  } catch(e) { return ''; }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// EXPANDED ROW DETAIL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const PRIORITY_COLS = new Set([
+  'input_id','link','title','category','address','open_hours','popular_times','website','phone',
+  'plus_code','review_count','review_rating','reviews_per_rating','latitude','longitude','cid',
+  'status','descriptions','reviews_link','thumbnail','timezone','price_range','data_id','place_id',
+  'images','reservations','order_online','menu','owner','complete_address','about',
+  'user_reviews','user_reviews_extended','emails','_id'
+]);
+
+function buildDetailHTML(row) {
+  const lat = row.latitude || '', lng = row.longitude || '';
+  const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : '';
+  const extras  = Object.entries(row).filter(([k,v]) => !PRIORITY_COLS.has(k) && v && v !== 'nan' && v !== 'null' && String(v).trim());
+
+  let h = '<div class="detail-content">';
+
+  h += `<div class="det-section"><div class="det-title">Ubicación</div>`;
+  if (row.complete_address || row.address) {
+    const ca = parseCompleteAddress(row.complete_address);
+    const addrStr = ca ? [ca.street, ca.city, ca.postal_code].filter(Boolean).join(', ') : (row.address||'');
+    h += `<div style="font-size:.82rem;color:var(--muted);line-height:1.5">${esc(addrStr)}</div>`;
+  }
+  if (row.phone)        h += `<a href="tel:${esc(row.phone)}" class="cell-link" style="max-width:none" onclick="event.stopPropagation()">${esc(row.phone)}</a>`;
+  if (row.review_count) h += `<div style="font-size:.82rem;color:var(--muted)"><strong style="color:var(--text)">${esc(row.review_count)}</strong> reseñas</div>`;
+  if (lat && lng) h += `<div style="font-size:.76rem;color:var(--subtle);font-family:ui-monospace,monospace">${lat}, ${lng}</div>`;
+  if (mapsUrl)    h += `<a href="${esc(mapsUrl)}" target="_blank" rel="noopener" class="map-btn" onclick="event.stopPropagation()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Ver en Google Maps</a>`;
+  h += '</div>';
+
+  h += `<div class="det-section"><div class="det-title">Horarios</div>${renderHours(row.open_hours)}</div>`;
+
+  const distH = renderDistBars(row.reviews_per_rating);
+  if (distH) h += `<div class="det-section"><div class="det-title">Distribución de calificaciones</div>${distH}</div>`;
+
+  const imgsH = renderImages(row.images);
+  if (imgsH) h += `<div class="det-section" style="grid-column:1/-1"><div class="det-title">Imágenes</div>${imgsH}</div>`;
+
+  const revH = renderReviews(row.user_reviews || row.user_reviews_extended);
+  if (revH) h += `<div class="det-section" style="grid-column:1/-1"><div class="det-title">Reseñas</div>${revH}</div>`;
+
+  if (extras.length) {
+    h += `<div class="det-section" style="grid-column:1/-1"><div class="det-title">Más datos</div><div class="extras-grid">`;
+    for (const [k,v] of extras.slice(0,14)) {
+      h += `<div class="extra-item"><span class="extra-key">${esc(k.replace(/_/g,' '))}: </span><span>${esc(String(v).slice(0,100))}</span></div>`;
+    }
+    h += '</div></div>';
+  }
+
+  return h + '</div>';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// EXPAND TOGGLE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function toggleExpand(id) {
+  expandedIds.has(id) ? expandedIds.delete(id) : expandedIds.add(id);
+  if (activeTab === 'scrapeados') renderScrapeados();
+  if (activeTab === 'pipeline')   renderPipeline();
+  if (activeTab === 'clientes')   renderClientes();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER: PIPELINE FILTER CHIPS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderPipelineFilterChips() {
+  const el = document.getElementById('pipeline-status-chips');
+  if (!el) return;
+  let h = '';
+  for (const [key, label] of Object.entries(STATUS_LABELS)) {
+    const active = pipelineStatuses.has(key);
+    h += `<span class="chip${active?' active':''}" onclick="togglePipelineStatus('${key}')">${label}</span>`;
+  }
+  el.innerHTML = h;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER: EMPTY STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function emptyStateHTML(title, msg) {
+  return `<div class="empty-state">
+    <div class="empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <h3>${title}</h3><p>${msg}</p>
+  </div>`;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER: TABLE 1 — SCRAPEADOS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderScrapeados() {
+  const data = getFilteredScrapeados();
+  document.getElementById('meta-scrapeados').innerHTML =
+    `Mostrando <strong>${data.length}</strong> de <strong>${state.scrapeados.length}</strong> registros`;
+
+  const tbody = document.getElementById('tbody-scrapeados');
+  if (!data.length) {
+    const msg = state.scrapeados.length === 0
+      ? 'Importá un CSV para comenzar.'
+      : 'Ajustá la búsqueda para ver resultados.';
+    tbody.innerHTML = `<tr><td colspan="8">${emptyStateHTML('Sin registros', msg)}</td></tr>`;
+    renderScrapeadosCards([]);
+    return;
+  }
+
+  let h = '';
+  for (const r of data) {
+    const exp      = expandedIds.has(r._id);
+    const emails   = parseEmails(r.emails);
+    const dupInfo  = getDuplicateInfo(r);
+    const dupeBadge = dupInfo
+      ? `<span class="dupe-badge" title="Ya existe en ${tableLabel(dupInfo.table)}: ${esc(dupInfo.table === 'pipeline' ? (dupInfo.item.record.title||'—') : (dupInfo.item.record.title||'—'))}">${SVG_DUPE} ${tableLabel(dupInfo.table)}</span>`
+      : '';
+    h += `<tr class="data-row${exp?' is-expanded':''}" onclick="toggleExpand('${r._id}')">
+      <td class="expand-cell"><button class="xbtn">${SVG_CHEVRON}</button></td>
+      <td><strong style="font-size:.87rem">${esc(r.title||'—')}</strong>${dupeBadge}</td>
+      <td>${renderAddressCell(r)}</td>
+      <td>${r.phone ? `<a href="tel:${esc(r.phone)}" class="cell-link" onclick="event.stopPropagation()">${esc(r.phone)}</a>` : '<span class="cell-dash">—</span>'}</td>
+      <td>${renderEmailCell(emails)}</td>
+      <td>${r.website ? `<a href="${esc(r.website)}" target="_blank" rel="noopener" class="cell-link" onclick="event.stopPropagation()">${esc(trimUrl(r.website))}</a>` : '<span class="cell-dash">—</span>'}</td>
+      <td><div class="rating-cell">${stars(r.review_rating)}<span class="rating-num">${fmtRating(r.review_rating)}</span></div></td>
+      <td onclick="event.stopPropagation()" style="text-align:center">
+        <div style="display:flex;gap:4px;align-items:center;justify-content:center">
+          <button class="action-btn btn-validate" onclick="validateLead('${r._id}')" title="Mover al Pipeline">${SVG_CHECK}</button>
+          <button class="action-btn btn-discard"  onclick="discardLead('${r._id}')"  title="Descartar permanentemente">${SVG_X}</button>
+        </div>
+      </td>
+    </tr>`;
+    if (exp) h += `<tr class="detail-row"><td colspan="8">${buildDetailHTML(r)}</td></tr>`;
+  }
+  tbody.innerHTML = h;
+  renderScrapeadosCards(data);
+}
+
+function renderScrapeadosCards(data) {
+  const grid = document.getElementById('cards-scrapeados');
+  if (!data.length) { grid.innerHTML = `<div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">${emptyStateHTML('Sin registros','')}</div>`; return; }
+  let h = '';
+  for (const r of data) {
+    const emails = parseEmails(r.emails);
+    const exp = expandedIds.has(r._id);
+    h += `<div class="m-card">
+      <div class="m-card-top">
+        <div><div class="m-title">${esc(r.title||'—')}</div><div class="m-addr">${renderAddressCardLine(r)}</div></div>
+        <div class="m-rating-wrap">${stars(r.review_rating)}<div class="m-rnum">${fmtRating(r.review_rating)}</div></div>
+      </div>
+      <div class="m-card-fields">
+        ${r.phone ? `<div class="m-field"><svg class="m-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.59 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><a href="tel:${esc(r.phone)}" class="cell-link" style="max-width:none">${esc(r.phone)}</a></div>` : ''}
+        ${emails.length ? `<div class="m-field"><svg class="m-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="mailto:${esc(emails[0])}" class="cell-link" style="max-width:none">${esc(emails[0])}</a></div>` : ''}
+      </div>
+      <div class="m-card-actions">
+        <button class="action-btn btn-validate" style="width:auto;padding:0 10px;gap:5px;font-size:.78rem;font-weight:700;font-family:inherit;height:28px" onclick="validateLead('${r._id}')">${SVG_CHECK} Validar</button>
+        <button class="action-btn btn-discard"  style="width:auto;padding:0 10px;gap:5px;font-size:.78rem;font-weight:700;font-family:inherit;height:28px" onclick="discardLead('${r._id}')">${SVG_X} Descartar</button>
+      </div>
+      <button class="m-expand-btn" onclick="toggleCardExpand(this,'${r._id}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:${exp?'rotate(180deg)':''}"><polyline points="6 9 12 15 18 9"/></svg>
+        <span>${exp?'Ocultar':'Ver detalles'}</span>
+      </button>
+      <div class="m-detail${exp?' open':''}"><div id="mdet-${r._id}">${exp?buildDetailHTML(r):''}</div></div>
+    </div>`;
+  }
+  grid.innerHTML = h;
+}
+
+function toggleCardExpand(btn, id) {
+  expandedIds.has(id) ? expandedIds.delete(id) : expandedIds.add(id);
+  const card   = btn.closest('.m-card');
+  const detail = card.querySelector('.m-detail');
+  const inner  = card.querySelector(`#mdet-${id}`);
+  const svg    = btn.querySelector('svg');
+  const label  = btn.querySelector('span');
+  const isOpen = expandedIds.has(id);
+  detail.classList.toggle('open', isOpen);
+  svg.style.transform = isOpen ? 'rotate(180deg)' : '';
+  label.textContent   = isOpen ? 'Ocultar' : 'Ver detalles';
+  if (isOpen && inner) inner.innerHTML = buildDetailHTML(
+    [...state.scrapeados, ...state.pipeline.map(l=>l.record), ...state.clientes.map(c=>c.record)].find(r => r._id === id || r._id === id) ||
+    state.scrapeados.find(r => r._id === id)
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER: TABLE 2 — PIPELINE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderPipeline() {
+  const data = getFilteredPipeline();
+  document.getElementById('meta-pipeline').innerHTML =
+    `Mostrando <strong>${data.length}</strong> de <strong>${state.pipeline.length}</strong> leads`;
+
+  const tbody = document.getElementById('tbody-pipeline');
+  if (!data.length) {
+    const msg = state.pipeline.length === 0 ? 'Validá leads desde la tabla de Scrapeados.' : 'Ningún lead coincide con los filtros seleccionados.';
+    tbody.innerHTML = `<tr><td colspan="9">${emptyStateHTML('Pipeline vacío', msg)}</td></tr>`;
+    renderPipelineCards([]);
+    return;
+  }
+
+  let h = '';
+  for (const lead of data) {
+    const r      = lead.record;
+    const exp    = expandedIds.has(lead.id);
+    const emails = parseEmails(r.emails);
+    const days   = daysSince(lead.statusDate);
+    const isStale = (lead.status === 'contactado' || lead.status === 'demo_ofrecida') && days > 30;
+    const rowClass = lead.status === 'no_interesa' ? 'row-no-interesa' : (isStale ? 'row-stale' : '');
+
+    const statusOpts = Object.entries(STATUS_LABELS).map(([k,v]) =>
+      `<option value="${k}" ${k===lead.status?'selected':''}>${v}</option>`
+    ).join('');
+
+    const showDays  = lead.status === 'contactado' || lead.status === 'demo_ofrecida';
+    const showMove  = lead.status === 'cliente_nuevo';
+    const wasCliente = (r.historial_tablas || []).some(h => h.tabla === 'Clientes');
+    const histBadge  = wasCliente ? `<span class="hist-badge" title="Este lead fue cliente activo anteriormente">${SVG_HIST} fue cliente</span>` : '';
+
+    h += `<tr class="data-row${exp?' is-expanded':''} ${rowClass}" data-rowid="${lead.id}" onclick="toggleExpand('${lead.id}')">
+      <td class="expand-cell"><button class="xbtn">${SVG_CHEVRON}</button></td>
+      <td><strong style="font-size:.87rem">${esc(r.title||'—')}</strong>${histBadge}</td>
+      <td>${renderAddressCell(r)}</td>
+      <td>${r.phone ? `<a href="tel:${esc(r.phone)}" class="cell-link" onclick="event.stopPropagation()">${esc(r.phone)}</a>` : '<span class="cell-dash">—</span>'}</td>
+      <td>${renderEmailCell(emails)}</td>
+      <td>${r.website ? `<a href="${esc(r.website)}" target="_blank" rel="noopener" class="cell-link" onclick="event.stopPropagation()">${esc(trimUrl(r.website))}</a>` : '<span class="cell-dash">—</span>'}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="status-cell-wrap">
+          <select class="${statusSelectClass(lead.status)}"
+            onchange="changeStatus('${lead.id}', this.value); this.className=statusSelectClass(this.value)">
+            ${statusOpts}
+          </select>
+          ${showDays ? `<div class="status-days">hace ${days}d</div>` : ''}
+          ${showMove ? `<button class="action-btn btn-move" style="margin-top:4px" onclick="moveToClientes('${lead.id}')">${SVG_ARROW} Mover a Clientes</button>` : ''}
+        </div>
+      </td>
+      <td><span class="date-cell">${relTime(lead.statusDate)}</span></td>
+      <td onclick="event.stopPropagation()" style="text-align:center">
+        <button class="btn-back" onclick="returnToScrapeados('${lead.id}')">${SVG_BACK} Scrapeados</button>
+      </td>
+    </tr>`;
+    if (exp) h += `<tr class="detail-row"><td colspan="9">${buildDetailHTML(r)}</td></tr>`;
+  }
+  tbody.innerHTML = h;
+  renderPipelineCards(data);
+}
+
+function renderPipelineCards(data) {
+  const grid = document.getElementById('cards-pipeline');
+  if (!data.length) { grid.innerHTML = `<div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">${emptyStateHTML('Pipeline vacío','')}</div>`; return; }
+  let h = '';
+  for (const lead of data) {
+    const r      = lead.record;
+    const emails = parseEmails(r.emails);
+    const days   = daysSince(lead.statusDate);
+    const isStale = (lead.status === 'contactado' || lead.status === 'demo_ofrecida') && days > 30;
+    const showDays = lead.status === 'contactado' || lead.status === 'demo_ofrecida';
+    const showMove = lead.status === 'cliente_nuevo';
+    const statusOpts = Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}" ${k===lead.status?'selected':''}>${v}</option>`).join('');
+    const bgStyle = lead.status === 'no_interesa' ? 'opacity:.65' : (isStale ? 'background:#fffbeb' : '');
+
+    h += `<div class="m-card" style="${bgStyle}">
+      <div class="m-card-top">
+        <div><div class="m-title">${esc(r.title||'—')}</div><div class="m-addr">${renderAddressCardLine(r)}</div></div>
+      </div>
+      <div class="m-card-fields">
+        ${r.phone ? `<div class="m-field"><svg class="m-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.59 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><a href="tel:${esc(r.phone)}" class="cell-link" style="max-width:none">${esc(r.phone)}</a></div>` : ''}
+        ${emails.length ? `<div class="m-field"><svg class="m-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="mailto:${esc(emails[0])}" class="cell-link" style="max-width:none">${esc(emails[0])}</a></div>` : ''}
+      </div>
+      <div class="m-card-actions">
+        <select class="${statusSelectClass(lead.status)}" onchange="changeStatus('${lead.id}', this.value); this.className=statusSelectClass(this.value)">${statusOpts}</select>
+        ${showDays ? `<span class="status-days">hace ${days}d</span>` : ''}
+        ${showMove ? `<button class="action-btn btn-move" onclick="moveToClientes('${lead.id}')">${SVG_ARROW} Mover a Clientes</button>` : ''}
+      </div>
+      <button class="m-expand-btn" onclick="toggleCardExpand(this,'${lead.id}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        <span>Ver detalles</span>
+      </button>
+      <div class="m-detail"><div>${buildDetailHTML(r)}</div></div>
+    </div>`;
+  }
+  grid.innerHTML = h;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PAYMENT GRID
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildPaymentGrid(cliente) {
+  const now          = new Date();
+  const year         = now.getFullYear();
+  const curMonthIdx  = now.getMonth();
+  const addedDate    = new Date(cliente.addedAt);
+  const addedYear    = addedDate.getFullYear();
+  const addedMonthIdx = addedDate.getMonth();
+
+  // Count owed across full history
+  let owed = 0;
+  let d = new Date(addedYear, addedMonthIdx, 1);
+  const endD = new Date(year, curMonthIdx, 1);
+  while (d <= endD) {
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!cliente.pagos[k]) owed++;
+    d.setMonth(d.getMonth() + 1);
+  }
+
+  // Render current year grid
+  let html = '<div class="pay-grid">';
+  for (let i = 0; i < 12; i++) {
+    const key    = `${year}-${String(i+1).padStart(2,'0')}`;
+    const isPaid = !!cliente.pagos[key];
+    const isFuture     = i > curMonthIdx;
+    const isBeforeAdd  = (year === addedYear && i < addedMonthIdx) || year < addedYear;
+    const applicable   = !isFuture && !isBeforeAdd;
+
+    const cls     = applicable ? (isPaid ? 'pay-ok' : 'pay-due') : 'pay-na';
+    const clickH  = applicable ? `onclick="togglePago('${cliente.id}','${key}')" style="cursor:pointer"` : '';
+    const tooltip = isFuture ? 'Próximo' : (applicable ? (isPaid ? 'Pagado' : 'Pendiente') : 'N/A');
+
+    html += `<span class="pay-dot ${cls}" ${clickH} title="${MONTHS_FULL[i]} ${year} — ${tooltip}">${MONTHS_LETTER[i]}</span>`;
+  }
+  html += '</div>';
+  return { html, owed };
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER: TABLE 3 — CLIENTES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderClientes() {
+  const data = getFilteredClientes();
+  document.getElementById('meta-clientes').innerHTML =
+    `Mostrando <strong>${data.length}</strong> de <strong>${state.clientes.length}</strong> clientes`;
+
+  const tbody = document.getElementById('tbody-clientes');
+  if (!data.length) {
+    const msg = state.clientes.length === 0 ? 'Mové leads con estado "Cliente nuevo" desde el Pipeline.' : 'Sin resultados para el filtro seleccionado.';
+    tbody.innerHTML = `<tr><td colspan="9">${emptyStateHTML('Sin clientes activos', msg)}</td></tr>`;
+    renderClientesCards([]);
+    return;
+  }
+
+  let h = '';
+  for (const cliente of data) {
+    const r      = cliente.record;
+    const exp    = expandedIds.has(cliente.id);
+    const emails = parseEmails(r.emails);
+    const { html: payHtml, owed } = buildPaymentGrid(cliente);
+    const isOwed = isCurrentMonthUnpaid(cliente);
+    const rowClass = isOwed ? 'row-owed' : '';
+
+    h += `<tr class="data-row${exp?' is-expanded':''} ${rowClass}" data-rowid="${cliente.id}" onclick="toggleExpand('${cliente.id}')">
+      <td class="expand-cell"><button class="xbtn">${SVG_CHEVRON}</button></td>
+      <td><strong style="font-size:.87rem">${esc(r.title||'—')}</strong></td>
+      <td>${renderAddressCell(r)}</td>
+      <td>${r.phone ? `<a href="tel:${esc(r.phone)}" class="cell-link" onclick="event.stopPropagation()">${esc(r.phone)}</a>` : '<span class="cell-dash">—</span>'}</td>
+      <td>${renderEmailCell(emails)}</td>
+      <td><span class="date-cell">${fmtDate(cliente.addedAt)}</span></td>
+      <td onclick="event.stopPropagation()">${payHtml}</td>
+      <td onclick="event.stopPropagation()">
+        <span class="owed-badge ${owed === 0 ? 'owed-zero' : 'owed-some'}">${owed === 0 ? 'Al día' : `${owed} mes${owed>1?'es':''}`}</span>
+      </td>
+      <td onclick="event.stopPropagation()" style="text-align:center">
+        <button class="btn-back" onclick="returnToPipeline('${cliente.id}')">${SVG_BACK} Pipeline</button>
+      </td>
+    </tr>`;
+    if (exp) h += `<tr class="detail-row"><td colspan="9">${buildDetailHTML(r)}</td></tr>`;
+  }
+  tbody.innerHTML = h;
+  renderClientesCards(data);
+}
+
+function renderClientesCards(data) {
+  const grid = document.getElementById('cards-clientes');
+  if (!data.length) { grid.innerHTML = `<div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">${emptyStateHTML('Sin clientes activos','')}</div>`; return; }
+  let h = '';
+  for (const cliente of data) {
+    const r      = cliente.record;
+    const emails = parseEmails(r.emails);
+    const { html: payHtml, owed } = buildPaymentGrid(cliente);
+    const isOwed = isCurrentMonthUnpaid(cliente);
+
+    h += `<div class="m-card" style="${isOwed?'background:#fef2f2':''}">
+      <div class="m-card-top">
+        <div><div class="m-title">${esc(r.title||'—')}</div><div class="m-addr">${renderAddressCardLine(r)}</div></div>
+        <span class="owed-badge ${owed===0?'owed-zero':'owed-some'}" style="flex-shrink:0">${owed===0?'Al día':`${owed}m.`}</span>
+      </div>
+      <div class="m-card-fields">
+        ${r.phone ? `<div class="m-field"><svg class="m-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.59 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><a href="tel:${esc(r.phone)}" class="cell-link" style="max-width:none">${esc(r.phone)}</a></div>` : ''}
+        ${emails.length ? `<div class="m-field"><svg class="m-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="mailto:${esc(emails[0])}" class="cell-link" style="max-width:none">${esc(emails[0])}</a></div>` : ''}
+        <div class="m-field" style="align-items:flex-start;flex-direction:column;gap:6px">
+          <span style="font-size:.76rem;font-weight:700;color:var(--subtle);text-transform:uppercase;letter-spacing:.04em">Pagos ${new Date().getFullYear()}</span>
+          ${payHtml}
+        </div>
+        <div class="m-field"><span style="font-size:.76rem;color:var(--muted)">Alta: ${fmtDate(cliente.addedAt)}</span></div>
+      </div>
+    </div>`;
+  }
+  grid.innerHTML = h;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER ALL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderAll() {
+  updateTabCounts();
+  setTab(activeTab);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// EXPORT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function exportCurrentTable() {
+  const wrap = v => {
+    const s = String(v == null ? '' : v);
+    return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+
+  let rows, filename;
+
+  if (activeTab === 'scrapeados') {
+    rows = state.scrapeados;
+    filename = `scrapeados_${dateStr()}.csv`;
+  } else if (activeTab === 'pipeline') {
+    rows = state.pipeline.map(l => ({
+      ...l.record,
+      pipeline_status:       STATUS_LABELS[l.status] || l.status,
+      pipeline_status_date:  l.statusDate,
+      pipeline_added:        l.addedAt
+    }));
+    filename = `pipeline_${dateStr()}.csv`;
+  } else {
+    rows = state.clientes.map(c => ({
+      ...c.record,
+      fecha_alta: c.addedAt,
+      ...Object.fromEntries(
+        MONTHS_FULL.map((m, i) => {
+          const key = `${new Date().getFullYear()}-${String(i+1).padStart(2,'0')}`;
+          return [m.toLowerCase(), c.pagos[key] ? 'pagado' : 'pendiente'];
+        })
+      )
+    }));
+    filename = `clientes_${dateStr()}.csv`;
+  }
+
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [
+    headers.map(wrap).join(','),
+    ...rows.map(r => headers.map(h => wrap(r[h])).join(','))
+  ].join('\n');
+
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function dateStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MODAL MANAGEMENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function showModal(title, subtitle, bodyHTML, buttons) {
+  document.getElementById('modal-title').textContent    = title;
+  document.getElementById('modal-subtitle').innerHTML   = subtitle;
+  document.getElementById('modal-body').innerHTML       = bodyHTML;
+
+  const footer = document.getElementById('modal-footer');
+  footer.innerHTML = '';
+  for (const btn of buttons) {
+    const el = document.createElement('button');
+    el.className = `btn ${btn.cls}`;
+    el.innerHTML = btn.label;
+    el.onclick   = btn.action;
+    if (btn.id)       el.id       = btn.id;
+    if (btn.disabled) el.disabled = true;
+    footer.appendChild(el);
+  }
+
+  document.getElementById('modal-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function viewExistingRecord(table, id) {
+  setTab(table);
+  expandedIds.add(id);
+  if (table === 'pipeline') renderPipeline();
+  if (table === 'clientes') renderClientes();
+  setTimeout(() => {
+    const row = document.querySelector(`[data-rowid="${id}"]`);
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 80);
+}
+
+function openDuplicatesModal() {
+  const dupes = scanAllDuplicates();
+
+  if (!dupes.length) {
+    showModal(
+      'Sin duplicados',
+      'El escaneo completó sin encontrar coincidencias.',
+      `<div style="text-align:center;padding:28px 0">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" style="margin:0 auto 12px;display:block"><polyline points="20 6 9 17 4 12"/></svg>
+        <p style="font-size:.88rem;color:var(--muted)">Todos los registros de Scrapeados tienen teléfono o email únicos en el CRM.</p>
+      </div>`,
+      [{ label: 'Cerrar', cls: 'btn-primary', action: closeModal }]
+    );
+    return;
+  }
+
+  // Build list
+  let listHTML = '<div class="dupe-list">';
+  for (const { scrapeado, conflict } of dupes) {
+    const where     = tableLabel(conflict.table);
+    const locClass  = `loc-${conflict.table}`;
+    const existing  = conflict.table === 'pipeline'
+      ? `${esc(conflict.item.record.title||'—')} &nbsp;<span class="loc-tag ${locClass}">${where}</span> &nbsp;<span style="font-size:.75rem;color:var(--muted)">${STATUS_LABELS[conflict.item.status]||''}</span>`
+      : `${esc(conflict.item.record.title||'—')} &nbsp;<span class="loc-tag ${locClass}">${where}</span>`;
+    const sid = scrapeado._id;
+    const cid = conflict.item.id;
+
+    listHTML += `<div class="dupe-item">
+      <div class="dupe-item-info">
+        <div class="dupe-item-title">${esc(scrapeado.title||'—')} <span style="font-size:.75rem;font-weight:400;color:var(--subtle)">en Scrapeados</span></div>
+        <div class="dupe-item-sub">Conflicto con: ${existing}</div>
+      </div>
+      <div class="dupe-item-acts">
+        ${conflict.table !== 'scrapeados' ? `<button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px;height:auto" onclick="viewExistingRecord('${conflict.table}','${cid}');closeModal()">Ver</button>` : ''}
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px;height:auto;color:var(--red);border-color:#fecaca" onclick="discardLeadSilent('${sid}');this.closest('.dupe-item').remove();updateDupeCount()">Eliminar</button>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px;height:auto" onclick="ignoreAndKeepBoth('${sid}');this.closest('.dupe-item').remove();updateDupeCount()">Mantener ambos</button>
+      </div>
+    </div>`;
+  }
+  listHTML += '</div><div id="dupe-count-empty" style="display:none;text-align:center;padding:20px;font-size:.85rem;color:var(--muted)">Todos los duplicados fueron gestionados.</div>';
+
+  showModal(
+    'Duplicados encontrados',
+    `${dupes.length} registro${dupes.length>1?'s':''} en Scrapeados comparten teléfono o email con otra tabla`,
+    listHTML,
+    [
+      { label: 'Cerrar', cls: 'btn-primary', action: () => { closeModal(); renderScrapeados(); } },
+    ]
+  );
+}
+
+// Silent discard from duplicates modal (no confirm dialog)
+function discardLeadSilent(id) {
+  state.scrapeados = state.scrapeados.filter(r => r._id !== id);
+  saveState();
+  updateTabCounts();
+}
+
+// Called after each item is removed from the modal list
+function updateDupeCount() {
+  const list    = document.querySelector('#modal-body .dupe-list');
+  const isEmpty = !list || list.querySelectorAll('.dupe-item').length === 0;
+  const emptyEl = document.getElementById('dupe-count-empty');
+  if (emptyEl) emptyEl.style.display = isEmpty ? 'block' : 'none';
+  saveState();
+  renderScrapeados();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+document.addEventListener('DOMContentLoaded', () => {
+  initFileHandlers();
+  if (loadState() && (state.scrapeados.length || state.pipeline.length || state.clientes.length)) {
+    showApp();
+  }
+});
+</script>
+</body>
+</html>
